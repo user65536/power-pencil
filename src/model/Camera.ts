@@ -1,4 +1,4 @@
-import { Coordinate } from "./Coordinate";
+import { Coordinate, ViewCoordinate, WorldCoordinate } from "./Coordinate";
 import { matrix, multiply, inv, Matrix, transpose } from "mathjs";
 
 export interface CameraOptions {
@@ -11,7 +11,7 @@ export class Camera {
 
   height: number;
 
-  _translate: Coordinate = [0, 0];
+  _translate: Coordinate = { x: 0, y: 0 };
 
   _scale: number = 1;
 
@@ -25,8 +25,8 @@ export class Camera {
 
   get translateMatrix() {
     return matrix([
-      [1, 0, this._translate[0]],
-      [0, 1, this._translate[1]],
+      [1, 0, this._translate.x],
+      [0, 1, this._translate.y],
       [0, 0, 1],
     ]);
   }
@@ -45,16 +45,27 @@ export class Camera {
   }
 
   translate(x: number, y: number) {
-    this._translate[0] += x;
-    this._translate[1] += y;
+    this._translate.x += x;
+    this._translate.y += y;
   }
 
   scale(rate: number) {
     this._scale *= rate;
   }
 
-  toWorld(coordinate: Coordinate) {
-    const vec = multiply(this.viewMatrix, transpose([...coordinate, 1]));
-    return vec.toArray().slice(0, 2);
+  zoom(rate: number, center: ViewCoordinate) {
+    const centerBeforeZoom = this.toWorld(center);
+    const scale = 1 / rate;
+    this.scale(scale);
+    const centerAfterZoom = this.toWorld(center);
+    const dx = centerAfterZoom.x - centerBeforeZoom.x;
+    const dy = centerAfterZoom.y - centerBeforeZoom.y;
+    this.translate(-dx, -dy);
+  }
+
+  toWorld(coordinate: ViewCoordinate): WorldCoordinate {
+    const vec = multiply(this.invViewMatrix, transpose([coordinate.x, coordinate.y, 1]));
+    const [x, y, _] = vec.toArray() as number[];
+    return { x, y };
   }
 }

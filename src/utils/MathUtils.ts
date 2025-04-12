@@ -1,10 +1,9 @@
 import { Matrix } from "mathjs";
 
-export class Utils {
+export class MathUtils {
   static matrixToCanvasTransform(matrix: Matrix): [number, number, number, number, number, number] {
     const m = matrix.toArray() as number[][];
 
-    // 确保是3x3矩阵
     if (m.length !== 3 || m[0].length !== 3) {
       throw new Error("Input matrix must be 3x3");
     }

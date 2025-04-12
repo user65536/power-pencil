@@ -1,7 +1,7 @@
 import { matrix, multiply } from "mathjs";
 import { Coordinate } from "./Coordinate";
 import { Camera } from "./Camera";
-import { Utils } from "./Utils";
+import { MathUtils } from "../utils";
 import { nanoid } from "nanoid";
 
 export interface ShapeOptions {}
@@ -11,7 +11,7 @@ export abstract class Shape {
 
   _rotate: number = 0;
 
-  _translate: Coordinate = [0, 0];
+  _translate: Coordinate = { x: 0, y: 0 };
 
   rotateMatrix = matrix([
     [1, 0, 0],
@@ -19,7 +19,7 @@ export abstract class Shape {
     [0, 0, 1],
   ]);
 
-  _scale: Coordinate = [1, 1];
+  _scale: Coordinate = { x: 1, y: 1 };
 
   get transformMatrix() {
     return multiply(this.translateMatrix, this.rotateMatrix, this.scaleMatrix);
@@ -27,16 +27,16 @@ export abstract class Shape {
 
   get translateMatrix() {
     return matrix([
-      [1, 0, this._translate[0]],
-      [0, 1, this._translate[1]],
+      [1, 0, this._translate.x],
+      [0, 1, this._translate.y],
       [0, 0, 1],
     ]);
   }
 
   get scaleMatrix() {
     return matrix([
-      [this._scale[0], 0, 0],
-      [0, this._scale[1], 0],
+      [this._scale.x, 0, 0],
+      [0, this._scale.y, 0],
       [0, 0, 1],
     ]);
   }
@@ -59,20 +59,20 @@ export abstract class Shape {
   }
 
   scale(x: number, y: number) {
-    this._scale[0] *= x;
-    this._scale[1] *= y;
+    this._scale.x *= x;
+    this._scale.y *= y;
   }
 
   translate(x: number, y: number) {
-    this._translate[0] += x;
-    this._translate[1] += y;
+    this._translate.x += x;
+    this._translate.y += y;
   }
 
   render(ctx: CanvasRenderingContext2D, camera: Camera) {
     ctx.save();
 
-    ctx.transform(...Utils.matrixToCanvasTransform(camera.viewMatrix));
-    ctx.transform(...Utils.matrixToCanvasTransform(this.transformMatrix));
+    ctx.transform(...MathUtils.matrixToCanvasTransform(camera.viewMatrix));
+    ctx.transform(...MathUtils.matrixToCanvasTransform(this.transformMatrix));
     this.renderShape(ctx, camera);
 
     ctx.restore();
