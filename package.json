@@ -12,7 +12,6 @@
   "dependencies": {
     "@types/styled-components": "^5.1.34",
     "events": "^3.3.0",
-    "hammerjs": "^2.0.8",
     "mathjs": "^14.4.0",
     "mobx": "^6.13.7",
     "mobx-react-lite": "^4.1.0",
@@ -24,7 +23,6 @@
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@types/events": "^3.0.3",
-    "@types/hammerjs": "^2.0.46",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",

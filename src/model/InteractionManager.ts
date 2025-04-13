@@ -1,7 +1,6 @@
 import { Coordinate } from "./Coordinate";
 import { Stage } from "./Stage";
 import { Rectangle } from "./Shapes";
-import { Manager, Pinch } from "hammerjs";
 import { Shape } from "./Shape";
 import { EventEmitter } from "../utils";
 
@@ -12,10 +11,6 @@ export interface InteractionEvents {
 
 export class InteractionManager {
   private rect: DOMRect | null = null;
-  private isDragging = false;
-  private lastPos: Coordinate = { x: 0, y: 0 };
-  private lastScale = 1;
-  private hammerManager: HammerManager;
 
   event = new EventEmitter<InteractionEvents>();
 
@@ -24,10 +19,6 @@ export class InteractionManager {
   }
 
   constructor(private stage: Stage) {
-    this.hammerManager = new Manager(this.canvas);
-    this.hammerManager.add(new Pinch());
-    this.hammerManager.get("pinch").set({ enable: true });
-
     this.updateCanvasBoundingRect();
     this.listenPinch();
   }
@@ -77,15 +68,6 @@ export class InteractionManager {
 
   private listenPinch() {
     this.canvas.addEventListener("wheel", this.handleWheel, { passive: false });
-
-    this.hammerManager.on("pinchstart", (e) => {
-      this.lastScale = e.scale;
-    });
-    this.hammerManager.on("pinchmove", (e) => {
-      const scaleDelta = e.scale / this.lastScale;
-      this.stage.camera.scale(scaleDelta);
-      this.lastScale = e.scale;
-    });
   }
 
   destroy() {
