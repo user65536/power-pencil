@@ -2,6 +2,13 @@ import { Coordinate } from "./Coordinate";
 import { Stage } from "./Stage";
 import { Rectangle } from "./Shapes";
 import { Manager, Pinch } from "hammerjs";
+import { Shape } from "./Shape";
+import { EventEmitter } from "../utils";
+
+export interface InteractionEvents {
+  "shape:select": (shape: Shape) => void;
+  "shape:unselect": () => void;
+}
 
 export class InteractionManager {
   private rect: DOMRect | null = null;
@@ -9,6 +16,8 @@ export class InteractionManager {
   private lastPos: Coordinate = { x: 0, y: 0 };
   private lastScale = 1;
   private hammerManager: HammerManager;
+
+  event = new EventEmitter<InteractionEvents>();
 
   get canvas() {
     return this.stage.canvas;
@@ -41,8 +50,8 @@ export class InteractionManager {
       const viewCoordinate = this.getViewCoordinate(event.clientX, event.clientY);
       this.stage.camera.zoom(scaleDelta, viewCoordinate);
     } else {
-      const deltaX = event.deltaX;
-      const deltaY = event.deltaY;
+      const deltaX = event.deltaX * this.stage.camera._scale;
+      const deltaY = event.deltaY * this.stage.camera._scale;
 
       this.stage.camera.translate(deltaX / 3, deltaY / 3);
     }
@@ -51,11 +60,19 @@ export class InteractionManager {
   handleCanvasClick = (event: React.MouseEvent) => {
     const viewCoordinate = this.getViewCoordinate(event.clientX, event.clientY);
     // FIXME for test
-    const wordCoordinate = this.stage.camera.toWorld(viewCoordinate);
-    const rect = new Rectangle({ width: 20, height: 20 });
-    rect.translate(wordCoordinate.x, wordCoordinate.y);
-    this.stage.addShape(rect);
-    console.log("view pos", viewCoordinate, "world pos", wordCoordinate);
+    const worldCoordinate = this.stage.camera.toWorldPoint(viewCoordinate);
+    const result = this.stage.collisionDetector.hit(viewCoordinate, worldCoordinate);
+    if (result) {
+      this.event.emit("shape:select", result);
+    } else {
+      this.event.emit("shape:unselect");
+    }
+    if (event.shiftKey) {
+      const rect = new Rectangle({ width: 20, height: 20 });
+      rect.translate(worldCoordinate.x, worldCoordinate.y);
+      this.stage.addShape(rect);
+      console.log("view pos", viewCoordinate, "world pos", worldCoordinate);
+    }
   };
 
   private listenPinch() {

@@ -1,9 +1,12 @@
 import { Coordinate, ViewCoordinate, WorldCoordinate } from "./Coordinate";
-import { matrix, multiply, inv, Matrix, transpose } from "mathjs";
+import { matrix, multiply, inv, Matrix } from "mathjs";
+import { MathUtils } from "./MathUtils";
+import { AxisAlignedBoundingBox, OrientedBoundingBox } from "./BoundingBox";
 
 export interface CameraOptions {
   width: number;
   height: number;
+  scaleRange: [number, number];
 }
 
 export class Camera {
@@ -14,6 +17,8 @@ export class Camera {
   _translate: Coordinate = { x: 0, y: 0 };
 
   _scale: number = 1;
+
+  worldBounding: AxisAlignedBoundingBox;
 
   get invViewMatrix(): Matrix {
     return multiply(this.translateMatrix, this.scaleMatrix);
@@ -39,33 +44,82 @@ export class Camera {
     ]);
   }
 
-  constructor(options: CameraOptions) {
+  constructor(private options: CameraOptions, worldBounding: AxisAlignedBoundingBox) {
     this.width = options.width;
     this.height = options.height;
+    this.worldBounding = worldBounding;
   }
 
   translate(x: number, y: number) {
-    this._translate.x += x;
-    this._translate.y += y;
+    const newX = this._translate.x + x;
+    const newY = this._translate.y + y;
+    if (newX >= this.worldBounding.x && newX <= this.worldBounding.x + this.worldBounding.width) {
+      this._translate.x = newX;
+    }
+    if (newY >= this.worldBounding.y && newY <= this.worldBounding.y + this.worldBounding.width) {
+      this._translate.y = newY;
+    }
   }
 
   scale(rate: number) {
-    this._scale *= rate;
+    const newScale = this._scale * rate;
+    const [min, max] = this.options.scaleRange;
+    if (newScale < min || newScale > max) return;
+    this._scale = newScale;
   }
 
   zoom(rate: number, center: ViewCoordinate) {
-    const centerBeforeZoom = this.toWorld(center);
+    const centerBeforeZoom = this.toWorldPoint(center);
     const scale = 1 / rate;
     this.scale(scale);
-    const centerAfterZoom = this.toWorld(center);
+    const centerAfterZoom = this.toWorldPoint(center);
     const dx = centerAfterZoom.x - centerBeforeZoom.x;
     const dy = centerAfterZoom.y - centerBeforeZoom.y;
     this.translate(-dx, -dy);
   }
 
-  toWorld(coordinate: ViewCoordinate): WorldCoordinate {
-    const vec = multiply(this.invViewMatrix, transpose([coordinate.x, coordinate.y, 1]));
-    const [x, y, _] = vec.toArray() as number[];
-    return { x, y };
+  toWorldPoint(coordinate: ViewCoordinate): WorldCoordinate {
+    return MathUtils.transformPoint(this.invViewMatrix, coordinate.x, coordinate.y);
+  }
+
+  toViewPoint(coordinate: WorldCoordinate): ViewCoordinate {
+    return MathUtils.transformPoint(this.viewMatrix, coordinate.x, coordinate.y);
+  }
+
+  toViewAABB(worldRect: AxisAlignedBoundingBox) {
+    return MathUtils.transformAABB(this.viewMatrix, worldRect);
+  }
+
+  toWorldAABB(viewRect: AxisAlignedBoundingBox) {
+    return MathUtils.transformAABB(this.invViewMatrix, viewRect);
+  }
+
+  toViewOBB(worldOBB: OrientedBoundingBox): OrientedBoundingBox {
+    const { center, width, height, rotation } = worldOBB;
+    const topLeft = { x: center.x - width / 2, y: center.y - height / 2 };
+    const rect: AxisAlignedBoundingBox = { ...topLeft, width, height };
+
+    const transformedRect = MathUtils.transformAABB(this.viewMatrix, rect);
+
+    return {
+      center: { x: transformedRect.x + transformedRect.width / 2, y: transformedRect.y + transformedRect.height / 2 },
+      width: transformedRect.width,
+      height: transformedRect.height,
+      rotation,
+    };
+  }
+
+  toWorldOBB(viewOBB: OrientedBoundingBox): OrientedBoundingBox {
+    const { center, width, height, rotation } = viewOBB;
+    const topLeft = { x: center.x - width / 2, y: center.y - height / 2 };
+    const rect: AxisAlignedBoundingBox = { ...topLeft, width, height };
+    const transformedRect = MathUtils.transformAABB(this.invViewMatrix, rect);
+
+    return {
+      center: { x: transformedRect.x + transformedRect.width / 2, y: transformedRect.y + transformedRect.height / 2 },
+      width: transformedRect.width,
+      height: transformedRect.height,
+      rotation,
+    };
   }
 }

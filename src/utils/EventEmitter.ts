@@ -1,6 +1,6 @@
 import { EventEmitter as EventEmitterBase } from "events";
 
-export class EventEmitter<T extends Record<string | number | symbol, (...args: any[]) => void>> {
+export class EventEmitter<T extends { [K in keyof T]: (...args: any[]) => void }> {
   private emitter: EventEmitterBase;
 
   constructor() {
