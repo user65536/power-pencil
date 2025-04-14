@@ -45,6 +45,7 @@ export class BoardController {
     shape.scale(scaleX, scaleY);
     shape.rotateTo(worldOBB.rotation);
     shape.translateTo(worldOBB.center.x, worldOBB.center.y);
+    this.drawBoard.stage.collisionDetector.updateShape(shape);
     this.updateActiveShape();
   };
 

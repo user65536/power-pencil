@@ -38,7 +38,7 @@ export class Stage {
   }
 
   addShape(shape: Shape) {
-    const added = this.collisionDetector.addShape(shape);
+    this.collisionDetector.addShape(shape);
     this.shapes.set(shape.id, shape);
   }
 

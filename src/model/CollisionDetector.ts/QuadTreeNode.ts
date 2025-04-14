@@ -21,19 +21,23 @@ export class QuadTreeNode<Data extends { id: string }> {
     return this.options.bounding;
   }
 
-  constructor(private options: QuadTreeNodeOptions) {}
+  constructor(private options: QuadTreeNodeOptions, private shapeToNodes: Map<string, Set<QuadTreeNode<Data>>>) {}
 
   insert(data: Data, bounding: AxisAlignedBoundingBox): boolean {
     const item: QuadTreeItem<Data> = { id: data.id, bounding, data };
     if (!aabbIntersects(this.bounding, bounding)) return false;
     if (this.isLeaf() && (this.items.length < this.options.capacity || this.options.depth >= this.options.maxDepth)) {
       this.items.push(item);
+      this.addToMap(item.id, this);
       return true;
     }
     if (this.isLeaf()) {
       this.split();
       for (const child of this.children) {
-        this.items.forEach((i) => child.insert(i.data, i.bounding));
+        this.items.forEach((i) => {
+          this.removeFromMap(i.id, this);
+          child.insert(i.data, i.bounding);
+        });
       }
       this.items = [];
     }
@@ -71,11 +75,29 @@ export class QuadTreeNode<Data extends { id: string }> {
       [0, halfHeight],
       [halfWidth, halfHeight],
     ].map(([dx, dy]) => {
-      return new QuadTreeNode<Data>({
-        ...this.options,
-        bounding: { x: this.bounding.x + dx, y: this.bounding.y + dy, width: halfWidth, height: halfHeight },
-        depth: this.options.depth + 1,
-      });
+      return new QuadTreeNode<Data>(
+        {
+          ...this.options,
+          bounding: { x: this.bounding.x + dx, y: this.bounding.y + dy, width: halfWidth, height: halfHeight },
+          depth: this.options.depth + 1,
+        },
+        this.shapeToNodes,
+      );
     });
+  }
+
+  private addToMap(id: string, node: QuadTreeNode<Data>) {
+    const shapeSet = this.shapeToNodes.get(id);
+    if (!shapeSet) {
+      this.shapeToNodes.set(id, new Set<QuadTreeNode<Data>>([node]));
+    } else {
+      shapeSet.add(node);
+    }
+  }
+
+  private removeFromMap(id: string, node: QuadTreeNode<Data>) {
+    const shapeSet = this.shapeToNodes.get(id);
+    if (!shapeSet) return;
+    shapeSet.delete(node);
   }
 }

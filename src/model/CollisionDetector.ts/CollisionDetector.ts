@@ -12,18 +12,37 @@ export interface CollisionDetectorOptions {
 export class CollisionDetector {
   quadTree: QuadTreeNode<Shape>;
 
+  shapeToNodes = new Map<string, Set<QuadTreeNode<Shape>>>();
+
   get stage() {
     return this.options.stage;
   }
 
   constructor(private options: CollisionDetectorOptions) {
-    this.quadTree = new QuadTreeNode({ ...options.quadTree, depth: 0, bounding: this.stage.bounding });
+    this.quadTree = new QuadTreeNode(
+      { ...options.quadTree, depth: 0, bounding: this.stage.bounding },
+      this.shapeToNodes,
+    );
   }
 
   addShape(shape: Shape) {
     const worldBounding = shape.aabb;
     console.log("view bounding", shape.aabb);
     return this.quadTree.insert(shape, worldBounding);
+  }
+
+  removeShape(shape: Shape) {
+    const nodes = this.shapeToNodes.get(shape.id);
+    if (!nodes) return;
+    for (const node of nodes) {
+      node.items = node.items.filter((i) => i.id !== shape.id);
+    }
+    this.shapeToNodes.delete(shape.id);
+  }
+
+  updateShape(shape: Shape) {
+    this.removeShape(shape);
+    this.addShape(shape);
   }
 
   query(bounding: AxisAlignedBoundingBox) {
