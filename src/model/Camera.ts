@@ -1,4 +1,4 @@
-import { Coordinate, ViewCoordinate, WorldCoordinate } from "./Coordinate";
+import { Coordinate, ViewCoordinate, ViewVector, WorldCoordinate, WorldVector } from "./Coordinate";
 import { matrix, multiply, inv, Matrix } from "mathjs";
 import { MathUtils } from "./MathUtils";
 import { AxisAlignedBoundingBox, OrientedBoundingBox } from "./BoundingBox";
@@ -76,6 +76,14 @@ export class Camera {
     const dx = centerAfterZoom.x - centerBeforeZoom.x;
     const dy = centerAfterZoom.y - centerBeforeZoom.y;
     this.translate(-dx, -dy);
+  }
+
+  toWorldVector(vector: ViewVector): WorldVector {
+    return MathUtils.transformVector(this.invViewMatrix, vector.x, vector.y);
+  }
+
+  toViewVector(vector: WorldVector): ViewVector {
+    return MathUtils.transformVector(this.viewMatrix, vector.x, vector.y);
   }
 
   toWorldPoint(coordinate: ViewCoordinate): WorldCoordinate {

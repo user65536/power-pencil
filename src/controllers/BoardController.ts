@@ -1,4 +1,4 @@
-import { DrawBoard, OrientedBoundingBox, Shape } from "../model";
+import { Coordinate, DrawBoard, OrientedBoundingBox, Shape } from "../model";
 import { action, makeObservable, observable } from "mobx";
 export interface BoardControllerOptions {
   drawBoard: DrawBoard;
@@ -64,15 +64,21 @@ export class BoardController {
     this.setActiveShape(null);
   };
 
+  private handleShapeMove = (shape: Shape, target: Coordinate) => {
+    shape.translateTo(target.x, target.y);
+    this.drawBoard.stage.collisionDetector.updateShape(shape);
+  };
+
   private listenEvents() {
     window.addEventListener("resize", () => this.drawBoard.interactionManager.updateCanvasBoundingRect);
     this.drawBoard.interactionManager.event.on("shape:select", this.setActiveShape);
+    this.drawBoard.interactionManager.event.on("shape:move", this.handleShapeMove);
     this.drawBoard.interactionManager.event.on("shape:unselect", this.handleShapeUnselect);
   }
 
   destroy() {
     window.removeEventListener("resize", () => this.drawBoard.interactionManager.updateCanvasBoundingRect);
-    this.drawBoard.interactionManager.event.off("shape:select", this.setActiveShape);
+    this.drawBoard.interactionManager.event.off("shape:move", this.handleShapeMove);
     this.drawBoard.interactionManager.event.off("shape:unselect", this.handleShapeUnselect);
   }
 }

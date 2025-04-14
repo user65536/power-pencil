@@ -29,7 +29,7 @@ export class MathUtils {
   }
 
   static transformVector(matrix: Matrix, x: number, y: number) {
-    return this.transformPointOrVector(matrix, x, y, 1);
+    return this.transformPointOrVector(matrix, x, y, 0);
   }
 
   private static transformPointOrVector(matrix: Matrix, x: number, y: number, w: number) {

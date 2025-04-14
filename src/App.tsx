@@ -60,13 +60,9 @@ function App() {
     return () => cancelAnimationFrame(rafId);
   }, [canvas]);
 
-  const handleClick = (e: MouseEvent<HTMLCanvasElement>) => {
-    board?.interactionManager.handleCanvasClick(e);
-  };
-
   return (
     <div style={{ border: "1px solid black", width, height, overflow: "hidden", position: "relative" }}>
-      <canvas width={width} height={height} ref={canvasRef} onClick={handleClick}></canvas>
+      <canvas width={width} height={height} ref={canvasRef}></canvas>
       {controller?.activeShape && (
         <TransformHandle
           obb={controller.drawBoard.stage.camera.toViewOBB(controller.activeShape.obb)}

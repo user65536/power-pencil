@@ -88,6 +88,7 @@ export const TransformHandle: React.FC<TransformHandleProps> = ({ obb, onTransfo
 
 const Wrapper = styled.div`
   position: absolute;
+  pointer-events: none;
   &::before {
     content: "";
     position: absolute;
@@ -109,6 +110,7 @@ const ControlPoint = styled.div`
   background-color: #ffffff;
   border: 1px solid #b8bfc3;
   cursor: pointer;
+  pointer-events: all;
 `;
 
 const CenterPoint = styled.div`
@@ -127,6 +129,7 @@ const RotateControlPoint = styled.div`
   border-radius: 50%;
   cursor: pointer;
   transform: translateY(50%);
+  pointer-events: all;
 `;
 
 const controlPointStyles: Record<string, React.CSSProperties> = {
@@ -161,7 +164,6 @@ export function resizeOBBWithHandle(
 ): OrientedBoundingBox {
   const [ux, uy] = dirVec;
 
-  // 当前旋转角度（deg -> rad）
   const angleRad = (obb.rotation * Math.PI) / 180;
 
   // 拖拽方向向量旋转后的方向
@@ -183,9 +185,9 @@ export function resizeOBBWithHandle(
   const baseDeltaVector = [ux * deltaLength, uy * deltaLength];
   const sizeGrowVector = [baseDeltaVector[0] * Math.sign(ux), baseDeltaVector[1] * Math.sign(uy)];
 
+  const newWidth = Math.max(1, obb.width + sizeGrowVector[0]);
+  const newHeight = Math.max(1, obb.height + sizeGrowVector[1]);
   const centerOffset: [number, number] = [rotatedDeltaVector[0] / 2, rotatedDeltaVector[1] / 2];
-  const newWidth = obb.width + sizeGrowVector[0];
-  const newHeight = obb.height + sizeGrowVector[1];
 
   const newCenter = {
     x: obb.center.x + centerOffset[0],
